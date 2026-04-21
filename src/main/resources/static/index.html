@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Expense Tracker</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #333;
+    }
+
+    /* ---- HEADER ---- */
+    header {
+      background: #2c3e50;
+      color: white;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    header span {
+      font-size: 13px;
+      opacity: 0.6;
+    }
+
+    /* ---- NAV TABS ---- */
+    .tabs {
+      display: flex;
+      background: #fff;
+      border-bottom: 2px solid #e0e0e0;
+      padding: 0 32px;
+    }
+
+    .tabs button {
+      background: none;
+      border: none;
+      padding: 14px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      color: #888;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s;
+    }
+
+    .tabs button.active {
+      color: #2c3e50;
+      border-bottom-color: #3498db;
+    }
+
+    .tabs button:hover:not(.active) {
+      color: #555;
+    }
+
+    /* ---- MAIN LAYOUT ---- */
+    .container {
+      max-width: 1100px;
+      margin: 32px auto;
+      padding: 0 24px;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* ---- SUMMARY CARDS ---- */
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .card .label {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .card .value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #2c3e50;
+    }
+
+    .card.green .value { color: #27ae60; }
+    .card.blue .value  { color: #2980b9; }
+    .card.orange .value { color: #e67e22; }
+
+    /* ---- SECTION HEADER ---- */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .section-header h2 {
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    /* ---- BUTTONS ---- */
+    .btn {
+      padding: 9px 18px;
+      border: none;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn:hover { opacity: 0.85; }
+
+    .btn-primary { background: #3498db; color: white; }
+    .btn-danger  { background: #e74c3c; color: white; padding: 6px 12px; font-size: 12px; }
+    .btn-edit    { background: #f39c12; color: white; padding: 6px 12px; font-size: 12px; }
+    .btn-secondary { background: #ecf0f1; color: #333; }
+
+    /* ---- TABLE ---- */
+    table {
+      width: 100%;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      border-collapse: collapse;
+      overflow: hidden;
+    }
+
+    thead {
+      background: #f7f9fc;
+    }
+
+    th {
+      text-align: left;
+      padding: 13px 18px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #888;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 13px 18px;
+      font-size: 14px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    tr:hover td {
+      background: #fafcff;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      background: #eaf4ff;
+      color: #2980b9;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px;
+      color: #aaa;
+      font-size: 14px;
+    }
+
+    /* ---- MODAL ---- */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      width: 440px;
+      max-width: 95vw;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    }
+
+    .modal h3 {
+      font-size: 18px;
+      margin-bottom: 24px;
+      color: #2c3e50;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #555;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #ddd;
+      border-radius: 7px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      border-color: #3498db;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    /* ---- TOAST ---- */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: #2c3e50;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 999;
+    }
+
+    #toast.show { opacity: 1; }
+    #toast.success { background: #27ae60; }
+    #toast.error   { background: #e74c3c; }
+
+    /* ---- LOADING ---- */
+    .loading {
+      text-align: center;
+      padding: 32px;
+      color: #aaa;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>💰 Expense Tracker</h1>
+  <span>Manage your expenses & categories</span>
+</header>
+
+<div class="tabs">
+  <button class="active" onclick="switchTab('dashboard')">Dashboard</button>
+  <button onclick="switchTab('expenses')">Expenses</button>
+  <button onclick="switchTab('categories')">Categories</button>
+</div>
+
+<div class="container">
+
+  <!-- DASHBOARD PAGE -->
+  <div class="page active" id="page-dashboard">
+    <div class="summary-cards">
+      <div class="card blue">
+        <div class="label">Total Expenses</div>
+        <div class="value" id="total-count">—</div>
+      </div>
+      <div class="card green">
+        <div class="label">Total Amount Spent</div>
+        <div class="value" id="total-amount">—</div>
+      </div>
+      <div class="card orange">
+        <div class="label">Total Categories</div>
+        <div class="value" id="total-categories">—</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <h2>Recent Expenses</h2>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th>Category</th>
+          </tr>
+        </thead>
+        <tbody id="recent-expenses-body">
+          <tr><td colspan="4" class="loading">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- EXPENSES PAGE -->
+  <div class="page" id="page-expenses">
+    <div class="section-header">
+      <h2>All Expenses</h2>
+      <button class="btn btn-primary" onclick="openExpenseModal()">+ Add Expense</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Amount</th>
+          <th>Date</th>
+          <th>Category</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="expenses-body">
+        <tr><td colspan="5" class="loading">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CATEGORIES PAGE -->
+  <div class="page" id="page-categories">
+    <div class="section-header">
+      <h2>All Categories</h2>
+      <button class="btn btn-primary" onclick="openCategoryModal()">+ Add Category</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Category Name</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="categories-body">
+        <tr><td colspan="3" class="loading">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- EXPENSE MODAL -->
+<div class="modal-overlay" id="expense-modal">
+  <div class="modal">
+    <h3 id="expense-modal-title">Add Expense</h3>
+    <div class="form-group">
+      <label>Amount (₹)</label>
+      <input type="number" id="expense-amount" placeholder="e.g. 500" min="0" step="0.01" />
+    </div>
+    <div class="form-group">
+      <label>Date</label>
+      <input type="date" id="expense-date" />
+    </div>
+    <div class="form-group">
+      <label>Category</label>
+      <select id="expense-category">
+        <option value="">-- Select Category --</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('expense-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveExpense()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORY MODAL -->
+<div class="modal-overlay" id="category-modal">
+  <div class="modal">
+    <h3 id="category-modal-title">Add Category</h3>
+    <div class="form-group">
+      <label>Category Name</label>
+      <input type="text" id="category-name" placeholder="e.g. Food, Travel, Bills..." />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('category-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCategory()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+  const API = 'http://localhost:8080/api';
+
+  // which expense/category we are editing (null = new)
+  let editingExpenseId = null;
+  let editingCategoryId = null;
+
+  // --------------------------------------------------------
+  // TAB SWITCHING
+  // --------------------------------------------------------
+  function switchTab(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+
+    document.getElementById('page-' + name).classList.add('active');
+
+    const tabs = document.querySelectorAll('.tabs button');
+    const idx = { dashboard: 0, expenses: 1, categories: 2 };
+    tabs[idx[name]].classList.add('active');
+
+    if (name === 'dashboard')  loadDashboard();
+    if (name === 'expenses')   loadExpenses();
+    if (name === 'categories') loadCategories();
+  }
+
+  // --------------------------------------------------------
+  // TOAST NOTIFICATION
+  // --------------------------------------------------------
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'show ' + type;
+    setTimeout(() => { t.className = ''; }, 3000);
+  }
+
+  // --------------------------------------------------------
+  // MODAL HELPERS
+  // --------------------------------------------------------
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  // close modal if user clicks the dark overlay area
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+  });
+
+  // --------------------------------------------------------
+  // DASHBOARD
+  // --------------------------------------------------------
+  async function loadDashboard() {
+    try {
+      const [expenses, categories] = await Promise.all([
+        fetch(API + '/expenses').then(r => r.json()),
+        fetch(API + '/categories').then(r => r.json())
+      ]);
+
+      document.getElementById('total-count').textContent = expenses.length;
+      document.getElementById('total-categories').textContent = categories.length;
+
+      const total = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+      document.getElementById('total-amount').textContent = '₹' + total.toFixed(2);
+
+      // show 5 most recent
+      const recent = [...expenses].reverse().slice(0, 5);
+      const tbody = document.getElementById('recent-expenses-body');
+
+      if (recent.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No expenses yet. Go add some!</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = recent.map((e, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td><strong>₹${parseFloat(e.amount).toFixed(2)}</strong></td>
+          <td>${e.expenseDate || '—'}</td>
+          <td><span class="badge">${e.categoryDto ? e.categoryDto.name : '—'}</span></td>
+        </tr>
+      `).join('');
+
+    } catch (err) {
+      console.error(err);
+      showToast('Could not connect to backend. Is Spring Boot running?', 'error');
+    }
+  }
+
+  // --------------------------------------------------------
+  // EXPENSES
+  // --------------------------------------------------------
+  async function loadExpenses() {
+    const tbody = document.getElementById('expenses-body');
+    tbody.innerHTML = '<tr><td colspan="5" class="loading">Loading...</td></tr>';
+
+    try {
+      const expenses = await fetch(API + '/expenses').then(r => r.json());
+
+      if (expenses.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No expenses found. Click "+ Add Expense" to create one.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = expenses.map((e, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td><strong>₹${parseFloat(e.amount).toFixed(2)}</strong></td>
+          <td>${e.expenseDate || '—'}</td>
+          <td><span class="badge">${e.categoryDto ? e.categoryDto.name : '—'}</span></td>
+          <td style="display:flex;gap:8px;">
+            <button class="btn btn-edit" onclick="editExpense(${e.id})">Edit</button>
+            <button class="btn btn-danger" onclick="deleteExpense(${e.id})">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+
+    } catch (err) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Failed to load expenses.</td></tr>';
+    }
+  }
+
+  async function openExpenseModal(id = null) {
+    editingExpenseId = id;
+
+    // load categories into the dropdown first
+    const select = document.getElementById('expense-category');
+    select.innerHTML = '<option value="">-- Select Category --</option>';
+
+    try {
+      const cats = await fetch(API + '/categories').then(r => r.json());
+      cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name;
+        select.appendChild(opt);
+      });
+    } catch (e) {
+      showToast('Could not load categories', 'error');
+    }
+
+    if (id) {
+      // editing — prefill fields
+      document.getElementById('expense-modal-title').textContent = 'Edit Expense';
+      try {
+        const expense = await fetch(API + '/expenses/' + id).then(r => r.json());
+        document.getElementById('expense-amount').value = expense.amount;
+        document.getElementById('expense-date').value = expense.expenseDate;
+        if (expense.categoryDto) {
+          select.value = expense.categoryDto.id;
+        }
+      } catch (e) {
+        showToast('Could not load expense details', 'error');
+      }
+    } else {
+      // new expense — clear fields and default date to today
+      document.getElementById('expense-modal-title').textContent = 'Add Expense';
+      document.getElementById('expense-amount').value = '';
+      document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
+      select.value = '';
+    }
+
+    openModal('expense-modal');
+  }
+
+  function editExpense(id) {
+    openExpenseModal(id);
+  }
+
+  async function saveExpense() {
+    const amount = document.getElementById('expense-amount').value.trim();
+    const expenseDate = document.getElementById('expense-date').value;
+    const categoryId = document.getElementById('expense-category').value;
+
+    if (!amount || !expenseDate || !categoryId) {
+      showToast('Please fill in all fields.', 'error');
+      return;
+    }
+
+    const body = {
+      amount: parseFloat(amount),
+      expenseDate: expenseDate,
+      categoryDto: { id: parseInt(categoryId) }
+    };
+
+    try {
+      const url = editingExpenseId
+        ? API + '/expenses/' + editingExpenseId
+        : API + '/expenses';
+
+      const method = editingExpenseId ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) throw new Error('Server error');
+
+      closeModal('expense-modal');
+      showToast(editingExpenseId ? 'Expense updated!' : 'Expense added!', 'success');
+      loadExpenses();
+
+    } catch (err) {
+      showToast('Failed to save expense.', 'error');
+    }
+  }
+
+  async function deleteExpense(id) {
+    if (!confirm('Delete this expense?')) return;
+
+    try {
+      await fetch(API + '/expenses/' + id, { method: 'DELETE' });
+      showToast('Expense deleted.', 'success');
+      loadExpenses();
+    } catch (err) {
+      showToast('Failed to delete.', 'error');
+    }
+  }
+
+  // --------------------------------------------------------
+  // CATEGORIES
+  // --------------------------------------------------------
+  async function loadCategories() {
+    const tbody = document.getElementById('categories-body');
+    tbody.innerHTML = '<tr><td colspan="3" class="loading">Loading...</td></tr>';
+
+    try {
+      const cats = await fetch(API + '/categories').then(r => r.json());
+
+      if (cats.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No categories yet. Click "+ Add Category" to start.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = cats.map((c, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${c.name}</td>
+          <td style="display:flex;gap:8px;">
+            <button class="btn btn-edit" onclick="editCategory(${c.id}, '${c.name}')">Edit</button>
+            <button class="btn btn-danger" onclick="deleteCategory(${c.id})">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+
+    } catch (err) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Failed to load categories.</td></tr>';
+    }
+  }
+
+  function openCategoryModal() {
+    editingCategoryId = null;
+    document.getElementById('category-modal-title').textContent = 'Add Category';
+    document.getElementById('category-name').value = '';
+    openModal('category-modal');
+  }
+
+  function editCategory(id, name) {
+    editingCategoryId = id;
+    document.getElementById('category-modal-title').textContent = 'Edit Category';
+    document.getElementById('category-name').value = name;
+    openModal('category-modal');
+  }
+
+  async function saveCategory() {
+    const name = document.getElementById('category-name').value.trim();
+
+    if (!name) {
+      showToast('Please enter a category name.', 'error');
+      return;
+    }
+
+    const body = { name };
+
+    try {
+      const url = editingCategoryId
+        ? API + '/categories/' + editingCategoryId
+        : API + '/categories';
+
+      const method = editingCategoryId ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) throw new Error('Server error');
+
+      closeModal('category-modal');
+      showToast(editingCategoryId ? 'Category updated!' : 'Category added!', 'success');
+      loadCategories();
+
+    } catch (err) {
+      showToast('Failed to save category.', 'error');
+    }
+  }
+
+  async function deleteCategory(id) {
+    if (!confirm('Delete this category? Any expenses using it may be affected.')) return;
+
+    try {
+      await fetch(API + '/categories/' + id, { method: 'DELETE' });
+      showToast('Category deleted.', 'success');
+      loadCategories();
+    } catch (err) {
+      showToast('Failed to delete.', 'error');
+    }
+  }
+
+  // --------------------------------------------------------
+  // INIT — load dashboard on page open
+  // --------------------------------------------------------
+  loadDashboard();
+</script>
+</body>
+</html>
